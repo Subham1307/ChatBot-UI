@@ -22,14 +22,13 @@ export default function FileUpload({ setPolicyFiles }: { setPolicyFiles: any }) 
       const uploadedFiles = []
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
+        const formData = new FormData()
+        formData.append("file", file)
         // Simulating API call to Python backend
         // Replace this with your actual API call
         const response = await fetch("http://localhost:8000/upload-pdf/", {
           method: "POST",
-          body: JSON.stringify({ filename: file.name }),
-          headers: {
-            "Content-Type": "application/json",
-          },
+          body: formData
         })
         const data = await response.json()
         uploadedFiles.push({ name: file.name, uin: data.uin, selected: true })

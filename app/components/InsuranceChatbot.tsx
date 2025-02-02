@@ -34,14 +34,14 @@ export default function InsuranceChatbot() {
     // Replace this with your actual API call
     const response = await fetch("http://localhost:8000/query/", {
       method: "POST",
-      body: JSON.stringify({ message: input, uins: selectedUins }),
+      body: JSON.stringify({ query: input, uins: selectedUins }),
       headers: {
         "Content-Type": "application/json",
       },
     })
     const data = await response.json()
 
-    const botMessage: Message = { role: "bot", content: data.reply.content }
+    const botMessage: Message = { role: "bot", content: data.answer }
     setMessages((prev) => [...prev, botMessage])
   }
 
