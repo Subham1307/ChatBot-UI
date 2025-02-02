@@ -1,8 +1,14 @@
 import { atom } from "recoil"
 
-export const uinState = atom<string | null>({
-  key: "uinState",
-  default: null,
+export interface PolicyFile {
+  name: string
+  uin: string
+  selected: boolean
+}
+
+export const policyFilesState = atom<PolicyFile[]>({
+  key: "policyFilesState",
+  default: [],
 })
 
 export const messagesState = atom<Array<{ role: "user" | "bot"; content: string }>>({
