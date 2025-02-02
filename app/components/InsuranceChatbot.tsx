@@ -16,6 +16,8 @@ export default function InsuranceChatbot() {
   const [uin, setUin] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
+  const [uploading, setUploading] = useState(false)
+  const [sending, setSending] = useState(false)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -24,41 +26,65 @@ export default function InsuranceChatbot() {
   }
 
   const handleUpload = async () => {
-    if (file) {
-      // Simulating API call to Python backend
-      // Replace this with your actual API call
-      const response = await fetch("/api/upload", {
+    if (!file) return
+    setUploading(true)
+    
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      // Adjust the URL as needed. If using a proxy, you might use '/api/upload'
+      const response = await fetch("http://localhost:8000/upload-pdf/", {
         method: "POST",
-        body: JSON.stringify({ filename: file.name }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        body: formData,
       })
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`)
+      }
       const data = await response.json()
       setUin(data.uin)
+    } catch (error) {
+      console.error(error)
+      alert("An error occurred during file upload.")
+    } finally {
+      setUploading(false)
     }
   }
 
   const handleSendMessage = async () => {
     if (!input.trim() || !uin) return
 
+    // Append user message to chat
     const userMessage: Message = { role: "user", content: input }
     setMessages((prev) => [...prev, userMessage])
+    const currentQuestion = input
     setInput("")
+    setSending(true)
 
-    // Simulating API call to chatbot
-    // Replace this with your actual API call
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      body: JSON.stringify({ message: input, uin }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-    const data = await response.json()
+    try {
+      // Adjust the URL as needed. If using a proxy, you might use '/api/chat'
+      const response = await fetch("http://localhost:8000/query/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ uin, question: currentQuestion }),
+      });
 
-    const botMessage: Message = { role: "bot", content: data.reply }
-    setMessages((prev) => [...prev, botMessage])
+      if (!response.ok) {
+        throw new Error(`Chat failed: ${response.statusText}`)
+      }
+      const data = await response.json()
+      console.log(data.reply.content)
+      const botMessage: Message = { role: "bot", content: data.reply.content }
+      setMessages((prev) => [...prev, botMessage])
+    } catch (error) {
+      console.error(error)
+      alert("An error occurred during the chat request.")
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -66,8 +92,8 @@ export default function InsuranceChatbot() {
       <div className="space-y-4">
         <Label htmlFor="file-upload">Upload Insurance Policy PDF</Label>
         <Input id="file-upload" type="file" accept=".pdf" onChange={handleFileChange} />
-        <Button onClick={handleUpload} disabled={!file}>
-          Upload and Process
+        <Button onClick={handleUpload} disabled={!file || uploading}>
+          {uploading ? "Uploading..." : "Upload and Process"}
         </Button>
       </div>
 
@@ -93,14 +119,13 @@ export default function InsuranceChatbot() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a question about the insurance policy..."
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            disabled={!uin}
+            disabled={!uin || sending}
           />
-          <Button onClick={handleSendMessage} disabled={!uin}>
-            Send
+          <Button onClick={handleSendMessage} disabled={!uin || sending}>
+            {sending ? "Sending..." : "Send"}
           </Button>
         </div>
       </div>
     </div>
   )
 }
-
