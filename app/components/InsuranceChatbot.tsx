@@ -40,8 +40,8 @@ export default function InsuranceChatbot() {
       },
     })
     const data = await response.json()
-
-    const botMessage: Message = { role: "bot", content: data.answer }
+    console.log("bot response : ",data.final_answer)
+    const botMessage: Message = { role: "bot", content: data.final_answer }
     setMessages((prev) => [...prev, botMessage])
   }
 
@@ -55,6 +55,7 @@ export default function InsuranceChatbot() {
             {messages.map((message, index) => (
               <div key={index} className={`mb-4 ${message.role === "user" ? "text-right" : "text-left"}`}>
                 <span
+                  style={{ whiteSpace: "pre-wrap" }}  
                   className={`inline-block p-2 rounded-lg ${
                     message.role === "user"
                       ? "bg-primary text-primary-foreground"
