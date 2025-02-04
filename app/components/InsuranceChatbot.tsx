@@ -19,6 +19,8 @@ export default function InsuranceChatbot() {
   const [policyFiles, setPolicyFiles] = useState([]) // Temporary state for demo
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [botMessage, setBotMessage] = useState("")
 
   const handleSendMessage = async () => {
     if (!input.trim() || policyFiles.length === 0) return
@@ -30,19 +32,39 @@ export default function InsuranceChatbot() {
     setMessages((prev) => [...prev, userMessage])
     setInput("")
 
-    // Simulating API call to chatbot
-    // Replace this with your actual API call
-    const response = await fetch("http://localhost:8000/query/", {
-      method: "POST",
-      body: JSON.stringify({ query: input, uins: selectedUins }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-    const data = await response.json()
-    console.log("bot response : ",data.final_answer)
-    const botMessage: Message = { role: "bot", content: data.final_answer }
-    setMessages((prev) => [...prev, botMessage])
+    // Set loading state to true and clear previous bot message
+    setIsLoading(true)
+    setBotMessage("")
+
+    try {
+      const response = await fetch("http://localhost:8000/query/", {
+        method: "POST",
+        body: JSON.stringify({ query: input, uins: selectedUins }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      const data = await response.json()
+      console.log("bot response : ", data.final_answer)
+
+      // Simulate typing effect
+      const words = data.final_answer.split(" ")
+      let typedMessage = ""
+      for (let i = 0; i < words.length; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 50)) // Adjust speed here
+        typedMessage += words[i] + " "
+        setBotMessage(typedMessage)
+      }
+
+      setMessages((prev) => [...prev, { role: "bot", content: typedMessage.trim() }])
+    } catch (error) {
+      console.error("Error fetching chat response:", error)
+      const errorMessage: Message = { role: "bot", content: "There was an error processing your request." }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -53,9 +75,12 @@ export default function InsuranceChatbot() {
         <div className="border rounded-lg p-4 space-y-4">
           <ScrollArea className="h-[400px] w-full">
             {messages.map((message, index) => (
-              <div key={index} className={`mb-4 ${message.role === "user" ? "text-right" : "text-left"}`}>
+              <div
+                key={index}
+                className={`mb-4 ${message.role === "user" ? "text-right" : "text-left"}`}
+              >
                 <span
-                  style={{ whiteSpace: "pre-wrap" }}  
+                  style={{ whiteSpace: "pre-wrap" }}
                   className={`inline-block p-2 rounded-lg ${
                     message.role === "user"
                       ? "bg-primary text-primary-foreground"
@@ -66,6 +91,16 @@ export default function InsuranceChatbot() {
                 </span>
               </div>
             ))}
+            {isLoading && (
+              <div className="mb-4 text-left">
+                <span
+                  style={{ whiteSpace: "pre-wrap" }}
+                  className="inline-block p-2 rounded-lg bg-secondary text-secondary-foreground"
+                >
+                  {botMessage}
+                </span>
+              </div>
+            )}
           </ScrollArea>
           <div className="flex space-x-2">
             <Input
@@ -73,9 +108,9 @@ export default function InsuranceChatbot() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask a question about the insurance policies..."
               onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-              disabled={policyFiles.length === 0}
+              disabled={policyFiles.length === 0 || isLoading}
             />
-            <Button onClick={handleSendMessage} disabled={policyFiles.length === 0}>
+            <Button onClick={handleSendMessage} disabled={policyFiles.length === 0 || isLoading}>
               Send
             </Button>
           </div>
@@ -84,4 +119,3 @@ export default function InsuranceChatbot() {
     </div>
   )
 }
-
