@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import FileUpload from "./FileUpload"
 import PolicySidebar from "./PolicySidebar"
+import parse from 'html-react-parser';
+
 
 interface Message {
   role: "user" | "bot"
@@ -87,7 +89,7 @@ export default function InsuranceChatbot() {
                       : "bg-secondary text-secondary-foreground"
                   }`}
                 >
-                  {message.content}
+                  {parse(message.content)}
                 </span>
               </div>
             ))}
@@ -97,7 +99,7 @@ export default function InsuranceChatbot() {
                   style={{ whiteSpace: "pre-wrap" }}
                   className="inline-block p-2 rounded-lg bg-secondary text-secondary-foreground"
                 >
-                  {botMessage}
+                  {parse(botMessage)}
                 </span>
               </div>
             )}
